@@ -22,7 +22,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
-#include <stdbool.h>
 #include <string.h>
 /* USER CODE END Includes */
 
@@ -57,15 +56,21 @@ static void MX_USART1_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint8_t TxData[6];
+char TxData[6];
 uint8_t RxData[6];
-char stop[1];
-char run[1];
+
 void sendData (uint8_t *data)
 {
+
 	HAL_GPIO_WritePin(RE_DE_GPIO_Port, RE_DE_Pin, GPIO_PIN_SET);
-	HAL_UART_Transmit(&huart1,data, sizeof(data),1000);
-	HAL_GPIO_WritePin(RE_DE_GPIO_Port, RE_DE_Pin, GPIO_PIN_RESET); // 	//Once the data is transmitted, we will enable the receiver mode by pulling the RE (Receive Enable) Pin LOW.
+	HAL_UART_Transmit(&huart1,data, strlen(data),1000);
+	HAL_GPIO_WritePin(RE_DE_GPIO_Port, RE_DE_Pin, GPIO_PIN_RESET); //
+}
+
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+	HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 16);
+	// The function ReceiveToIdle_IT will receive the incoming data and store in the temperature buffer, until the Idle line is detected.
 }
 /* USER CODE END 0 */
 
@@ -100,7 +105,8 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
- // HAL_UARTEx_ReceiveToIdle_IT(&huart1, temperature, 16);
+  HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 16);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -108,14 +114,21 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
-	  stop[0]='s';
-	  run[0]= 'r';
-	if(HAL_GPIO_ReadPin(GPIOB,PB9_Pin)==GPIO_PIN_SET) //Check for input button press
-		sendData(stop);
-	  if(HAL_GPIO_ReadPin(GPIOB,PB9_Pin)==GPIO_PIN_RESET) //Check for input button press
-	    sendData(run);
+	if(HAL_GPIO_ReadPin(GPIOB,PB9_Pin)==GPIO_PIN_RESET) {
+	  HAL_GPIO_WritePin(Led_GPIO_Port, Led_Pin,GPIO_PIN_SET);
+	  int num = 0;
+	  sprintf(TxData,"%d",num);
+	  sendData(TxData);
+	  HAL_Delay(500);
+	}
+	else if(HAL_GPIO_ReadPin(GPIOB,PB9_Pin)==GPIO_PIN_SET) {
+	  HAL_GPIO_WritePin(Led_GPIO_Port, Led_Pin,GPIO_PIN_RESET);
+	  int num=1;
+	  sprintf(TxData,"%d",num);
+	  sendData(TxData);
+	  HAL_Delay(500);
+	}
   }
   /* USER CODE END 3 */
 }
@@ -147,7 +160,7 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
@@ -199,12 +212,23 @@ static void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(Led_GPIO_Port, Led_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(RE_DE_GPIO_Port, RE_DE_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : Led_Pin */
+  GPIO_InitStruct.Pin = Led_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+  HAL_GPIO_Init(Led_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : RE_DE_Pin */
   GPIO_InitStruct.Pin = RE_DE_Pin;
@@ -216,7 +240,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : PB9_Pin */
   GPIO_InitStruct.Pin = PB9_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(PB9_GPIO_Port, &GPIO_InitStruct);
 
 }

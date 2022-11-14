@@ -60,8 +60,8 @@ static void MX_USART1_UART_Init(void);
 #define IN1_PIN GPIO_PIN_0
 #define IN1_PORT GPIOA
 
-uint8_t RxData[6]; //okunan verinin kaydedildiği dizi
-uint8_t TxData[6];//gönderilmek istenilen verinin kaydedildiği dizi
+uint8_t RxData;
+char taken[6]=" ";
 
 /* USER CODE END 0 */
 
@@ -95,7 +95,6 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 10); //okunan veriyi değişkene atama
 
   /* USER CODE END 2 */
 
@@ -103,23 +102,23 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  HAL_UART_Receive(&huart1, &RxData, 8 ,200);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  if(RxData == "run"){
+	  if(RxData == '0' ){
 		  	 HAL_GPIO_WritePin(IN1_PORT, IN1_PIN, GPIO_PIN_SET); //if the button is pressed the relay will be triggered
-		  	  HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 16);
-		  	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET); // led
+		  	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET); // led
 	 }
-	 else if(RxData == "stop"){
-			  HAL_GPIO_WritePin(IN1_PORT, IN1_PIN, GPIO_PIN_RESET); //if the button is pressed the relay will be triggered
-		  	  HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 16);
-		  	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET); // led
+	 else if(RxData == '1'){
+			 HAL_GPIO_WritePin(IN1_PORT, IN1_PIN, GPIO_PIN_RESET); //if the button is pressed the relay will be triggered
+		  	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET); // led
 	 }
   /* USER CODE END 3 */
-}
-}
+  }
 
+}
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -186,7 +185,6 @@ static void MX_USART1_UART_Init(void)
   /* USER CODE BEGIN USART1_Init 2 */
 
   /* USER CODE END USART1_Init 2 */
-
 }
 
 /**
@@ -222,7 +220,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
 }
 
 /* USER CODE BEGIN 4 */
