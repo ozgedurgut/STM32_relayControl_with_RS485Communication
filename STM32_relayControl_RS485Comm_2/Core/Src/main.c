@@ -107,14 +107,15 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  if(RxData == '0' ){
+	  if(RxData == 48 ){
 		  	 HAL_GPIO_WritePin(IN1_PORT, IN1_PIN, GPIO_PIN_SET); //if the button is pressed the relay will be triggered
 		  	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET); // led
 	 }
-	 else if(RxData == '1'){
+	 else if(RxData == 49){
 			 HAL_GPIO_WritePin(IN1_PORT, IN1_PIN, GPIO_PIN_RESET); //if the button is pressed the relay will be triggered
 		  	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET); // led
 	 }
+	  HAL_Delay(100);
   /* USER CODE END 3 */
   }
 
